@@ -97,19 +97,20 @@ HTTP_ACCEPT = {
 RE_JSON_BLK = r'^\{"h":(?P<h>\{.+?\}),"t":(?P<t>\[.+?\]),"v":(?P<v>\[.+?\])\}$'
 DBG_TMPO_SINK = "time:%.3f sid:%s rid:%d lvl:%2d bid:%d size[B]:%d"
 
-
 import os
 import sys
 import io
 import math
 import time
 import sqlite3
-import requests
 import zlib
 import re
 import json
-import numpy as np
+
+import requests
 import pandas as pd
+
+import numpy as np
 
 
 class TmpoError(Exception):
@@ -119,9 +120,9 @@ class TmpoError(Exception):
 class Session():
     def __init__(self):
         self.debug = False
-        self.home = os.environ["HOME"] + "/.tmpo"
-        self.db = self.home + "/tmpo.sqlite3"
-        self.crt = self.home + "/flukso.crt"
+        self.home = os.environ["HOME"] + os.sep + ".tmpo"
+        self.db = self.home + os.sep + "tmpo.sqlite3"
+        self.crt = self.home + os.sep + "flukso.crt"
         self.host = "api.flukso.net"
         try:
             os.mkdir(self.home)
@@ -230,8 +231,11 @@ class Session():
             headers=headers,
             params=params,
             verify=self.crt)
-        for t in r.json():
-            self._rqblock(sid, token, t["rid"], t["lvl"], t["bid"], t["ext"])
+        if r.status_code == 200:
+            for t in r.json():
+                self._rqblock(sid, token, t["rid"], t["lvl"], t["bid"], t["ext"])
+        else:
+            print('response status_code: %s' % r.status_code)
 
     def _rqblock(self, sid, token, rid, lvl, bid, ext):
         headers = {
